@@ -47,6 +47,7 @@ export default function HomePage() {
             <CardActions>
               <Button
                 fullWidth
+                variant="outlined"
                 color="primary"
                 onClick={() => router.push('/sequences')}
               >
@@ -66,6 +67,7 @@ export default function HomePage() {
             <CardActions>
               <Button
                 fullWidth
+                variant="outlined"
                 color="primary"
                 onClick={() => router.push('/users')}
               >
