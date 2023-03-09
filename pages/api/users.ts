@@ -8,6 +8,23 @@ export default async function handler(
   res: NextApiResponse
 ) {
   try {
+    const { id } = req.headers;
+    const userId = await prisma.user.findUnique({
+      where: {
+        id: id as string
+      }
+    });
+
+    if (!userId) {
+      res.status(404).json({
+        success: false,
+        status: 'error',
+        message: 'API endpoint not found',
+        timestamp: new Date().toISOString(),
+        stack: null
+      });
+    }
+
     const users = await prisma.user.findMany();
     const userWithoutPassword = users.map(user => {
       return exclude(user, ['password', 'updatedAt', 'createdAt']);
