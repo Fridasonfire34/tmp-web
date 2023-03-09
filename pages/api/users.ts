@@ -7,6 +7,15 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
+  if (req.method !== 'GET')
+    return res.status(405).json({
+      success: false,
+      status: 'error',
+      message: 'API endpoint not found',
+      timestamp: new Date().toISOString(),
+      stack: null
+    });
+
   try {
     const { id } = req.headers;
     const userId = await prisma.user.findUnique({
