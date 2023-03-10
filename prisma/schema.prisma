@@ -20,6 +20,7 @@ model User {
   active     Boolean  @default(true)
   createdAt  DateTime @default(now()) @map(name: "created_at")
   updatedAt  DateTime @updatedAt @map(name: "updated_at")
+
   @@map(name: "users")
 }
 
@@ -37,5 +38,6 @@ model Inventory {
   week          String
   createdAt     DateTime @default(now()) @map(name: "created_at")
   updatedAt     DateTime @updatedAt @map(name: "updated_at")
+
   @@map(name: "inventories")
 }
