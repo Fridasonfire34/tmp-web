@@ -1,13 +1,14 @@
 import { NextApiRequest, NextApiResponse } from 'next';
 
 import { prisma } from '@/lib/prisma';
-import { exclude } from '@/src/utils/prisma';
 
 export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== 'GET')
+  const { employeeId, name, employeeType } = req.body;
+
+  if (req.method !== 'POST')
     return res.status(405).json({
       success: false,
       status: 'error',
@@ -25,7 +26,7 @@ export default async function handler(
     });
 
     if (!userId)
-      res.status(404).json({
+      return res.status(404).json({
         success: false,
         status: 'error',
         message: 'API endpoint not found',
@@ -33,17 +34,34 @@ export default async function handler(
         stack: null
       });
 
-    const users = await prisma.user.findMany();
-    const userWithoutPassword = users.map(user => {
-      return exclude(user, ['password', 'updatedAt', 'createdAt']);
-    });
-    res.status(200).json({
-      success: true,
-      status: 'success',
-      message: 'Users fetched successfully',
-      timestamp: new Date().toISOString(),
-      stack: userWithoutPassword
-    });
+    try {
+      await prisma.user.updateMany({
+        where: {
+          employeeId: employeeId
+        },
+        data: {
+          name: name,
+          role: employeeType
+        }
+      });
+      return res.status(200).json({
+        success: true,
+        status: 'success',
+        message: 'Employee updated successfully',
+        timestamp: new Date().toISOString(),
+        stack: null
+      });
+    } catch (e) {
+      if (e instanceof Error) {
+        res.status(500).json({
+          success: false,
+          status: 'error',
+          message: e.message,
+          timestamp: new Date().toISOString(),
+          stack: null
+        });
+      }
+    }
   } catch (e) {
     if (e instanceof Error) {
       res.status(500).json({
