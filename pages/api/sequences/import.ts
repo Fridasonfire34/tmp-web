@@ -1,7 +1,6 @@
 import multiparty from 'multiparty';
 import { NextApiRequest, NextApiResponse } from 'next';
 import xlsx from 'node-xlsx';
-import { v4 } from 'uuid';
 
 import { prisma } from '@/lib/prisma';
 
@@ -67,7 +66,6 @@ export default async function handler(
                 line
               ] = row as string[];
               return {
-                id: v4(),
                 partNumber: partNumber ? String(partNumber) : null,
                 buildSequence: buildSequence ? Number(buildSequence) : null,
                 balloonNumber: balloonNumber ? String(balloonNumber) : null,
