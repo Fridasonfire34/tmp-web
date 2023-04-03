@@ -34,6 +34,7 @@ export default function SequencesAddPage() {
 
   const { data: client } = useSession();
   const router = useRouter();
+  const { week } = router.query;
 
   const {
     register,
@@ -46,7 +47,8 @@ export default function SequencesAddPage() {
     axios('/api/sequences/add', {
       method: 'POST',
       headers: {
-        id: client?.user.id as string
+        id: client?.user.id as string,
+        week: week as string
       },
       data
     })

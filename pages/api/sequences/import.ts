@@ -48,6 +48,7 @@ export default async function handler(
         });
       } else {
         const file = files?.files[0];
+        const fileNames = file.originalFilename.split('.')[0];
         if (file.size > 0) {
           const fileObj = xlsx.parse(file.path);
           const parseFile = fileObj[0]?.data;
@@ -74,7 +75,8 @@ export default async function handler(
                 poNo: poNo ? String(poNo) : null,
                 vendorNo: vendorNo ? Number(vendorNo) : null,
                 packingDiskNo: packingDiskNo ? Number(packingDiskNo) : null,
-                line: line ? String(line) : null
+                line: line ? String(line) : null,
+                week: String(fileNames)
               };
             }) as any;
 

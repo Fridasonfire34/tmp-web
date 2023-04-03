@@ -21,16 +21,13 @@ const authOptions: NextAuthOptions = {
         }
       },
       async authorize(credentials, req) {
-        const { email, password } = credentials as {
-          email: string;
-          password: string;
-        };
-        if (!email || !password) {
-          throw new Error('Correo electrónico o contraseña inválidos');
+        const { employeeId, password } = credentials as Record<string, string>;
+        if (!employeeId || !password) {
+          throw new Error('Credenciales invalidas');
         }
         const user = await prisma.user.findUnique({
           where: {
-            email
+            employeeId
           }
         });
         if (!user) {
@@ -38,7 +35,7 @@ const authOptions: NextAuthOptions = {
         } else {
           const isPasswordValid = await prisma.user.findUnique({
             where: {
-              email
+              employeeId
             },
             select: {
               password: true

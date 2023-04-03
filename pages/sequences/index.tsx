@@ -3,12 +3,8 @@ import { FilePond, registerPlugin } from 'react-filepond';
 import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 import {
-  Add as AddIcon,
   Delete as DeleteIcon,
-  ExpandLess as ExpandLessIcon,
-  ExpandMore as ExpandMoreIcon,
   GetApp as DownloadIcon,
-  Tune as TuneIcon,
   Visibility as VisibilityIcon,
   VisibilityOff as VisibilityOffIcon
 } from '@mui/icons-material';
@@ -16,7 +12,6 @@ import {
   Box,
   Button,
   CircularProgress,
-  Collapse,
   Dialog,
   DialogActions,
   DialogContent,
@@ -26,22 +21,18 @@ import {
   IconButton,
   InputAdornment,
   InputLabel,
-  List,
-  ListItemButton,
-  ListItemIcon,
-  ListItemText,
   OutlinedInput,
   Stack,
   Typography
 } from '@mui/material';
-import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import axios from 'axios';
 import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
 import Head from 'next/head';
-import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 
 import Layout from '@/src/components/layout';
+import WeekTabs from '@/src/components/tabs';
+import { groupArray } from '@/src/utils/data';
 
 import 'filepond/dist/filepond.min.css';
 
@@ -52,9 +43,8 @@ export default function SequencesPage() {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [userHasVerified, setUserHasVerified] = useState(false);
-  const [openMenuTable, setOpenMenuTable] = useState(false);
+  const [rows, setRows] = useState<any[]>([]);
 
-  const router = useRouter();
   const { data: client } = useSession();
   const { isLoading, error, data, refetch } = useQuery(
     'inventories',
@@ -69,42 +59,6 @@ export default function SequencesPage() {
       enabled: !!client?.user.id
     }
   );
-
-  const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID' },
-    { field: 'partNumber', headerName: 'Part Number', width: 200 },
-    {
-      field: 'buildSequence',
-      headerName: 'Build Sequence',
-      width: 150
-    },
-    {
-      field: 'quantity',
-      headerName: 'Quantity'
-    },
-    {
-      field: 'poNo',
-      headerName: 'Po. No.'
-    },
-    {
-      field: 'vendorNo',
-      headerName: 'Vendor No.',
-      width: 100
-    },
-    {
-      field: 'packingDiskNo',
-      headerName: 'Packing Disk No.',
-      width: 150
-    },
-    {
-      field: 'line',
-      headerName: 'Line'
-    },
-    {
-      field: 'scannedBy',
-      headerName: 'Scanned By'
-    }
-  ];
 
   const handleExport = () => {
     toast.loading('Descargando reporte...');
@@ -123,12 +77,8 @@ export default function SequencesPage() {
       .catch(() => toast.error('Ha ocurrido un error al descargar el reporte'));
   };
 
-  const handleAdd = () => {
-    router.push('/sequences/add');
-  };
-
   const handleDrop = () => {
-    setOpenDialog(false);
+    handleDialog();
     axios('/api/users/verify', {
       headers: {
         id: client?.user.id as string,
@@ -145,13 +95,12 @@ export default function SequencesPage() {
       })
       .finally(() => {
         setPassword('');
-        handleDialog();
       });
   };
 
-  const handleMenuTable = () => {
-    setOpenMenuTable(!openMenuTable);
-  };
+  const handleRefresh = useCallback(() => {
+    refetch();
+  }, [refetch]);
 
   const handleDialog = useCallback(() => {
     setOpenDialog(!openDialog);
@@ -173,12 +122,43 @@ export default function SequencesPage() {
           toast.error('Ha ocurrido un error al limpiar el listado');
         })
         .finally(() => {
+          setRows([]);
           setUserHasVerified(false);
           toast.dismiss();
           refetch();
         });
     }
   }, [client?.user.id, handleDialog, password, refetch, userHasVerified]);
+
+  useEffect(() => {
+    if (!isLoading && data?.stack?.length > 0) {
+      const rows = groupArray(data.stack, 'week');
+      const titleRows = Object.keys(rows);
+      const entriesRows = Object.values(rows);
+      const newRows = entriesRows.map((entry: any, index) => {
+        return {
+          id: index,
+          week: titleRows[index],
+          updateAt: entry[0].updatedAt,
+          stack: entry.map((item: any, index: number) => ({
+            id: item.id,
+            partNumber: item.partNumber,
+            buildSequence: item.buildSequence,
+            quantity: item.quantity,
+            poNo: item.poNo,
+            vendorNo: item.vendorNo,
+            packingDiskNo: item.packingDiskNo,
+            line: item.line,
+            scannedBy: item.scannedBy
+          }))
+        };
+      });
+      const sortedRows = newRows.sort((a, b) => {
+        return a.week > b.week ? 1 : -1;
+      });
+      setRows(sortedRows);
+    }
+  }, [data, isLoading]);
 
   return (
     <Layout>
@@ -198,18 +178,12 @@ export default function SequencesPage() {
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
         justifyContent="space-between"
-        alignItems="center"
         my={3}
       >
-        <Typography
-          variant="h5"
-          gutterBottom
-          fontWeight="400"
-          textAlign="center"
-        >
+        <Typography variant="h5" gutterBottom fontWeight="400" textAlign="left">
           Total de secuencias: {data?.stack?.length || 0}
         </Typography>
-        <Box display="flex" gap={2}>
+        <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
           <Button
             variant="outlined"
             endIcon={<DownloadIcon />}
@@ -225,9 +199,9 @@ export default function SequencesPage() {
             disabled={isLoading || !data?.stack?.length}
             onClick={handleDialog}
           >
-            Limpiar listado
+            Limpiar listado general
           </Button>
-        </Box>
+        </Stack>
       </Stack>
       <Box my={3}>
         <FilePond
@@ -256,27 +230,6 @@ export default function SequencesPage() {
           }}
         />
       </Box>
-      {data?.stack?.length > 0 && (
-        <List aria-labelledby="nested-list-subheader" sx={{ mt: 3, mb: 2 }}>
-          <ListItemButton onClick={handleMenuTable}>
-            <ListItemIcon>
-              <TuneIcon />
-            </ListItemIcon>
-            <ListItemText primary="Opciones" />
-            {openMenuTable ? <ExpandLessIcon /> : <ExpandMoreIcon />}
-          </ListItemButton>
-          <Collapse in={openMenuTable} timeout="auto" unmountOnExit>
-            <List component="div" disablePadding>
-              <ListItemButton sx={{ pl: 4 }} onClick={handleAdd}>
-                <ListItemIcon>
-                  <AddIcon />
-                </ListItemIcon>
-                <ListItemText primary="Añadir nueva secuencia" />
-              </ListItemButton>
-            </List>
-          </Collapse>
-        </List>
-      )}
       {isLoading && (
         <Stack gap={2}>
           <Typography variant="h5" gutterBottom>
@@ -293,25 +246,7 @@ export default function SequencesPage() {
           </Typography>
         </Stack>
       )}
-      {!isLoading && (
-        <DataGrid
-          autoHeight
-          rows={data?.stack ?? []}
-          columns={columns}
-          components={{
-            NoRowsOverlay: () => (
-              <Stack height="100%" alignItems="center" justifyContent="center">
-                No hay datos para mostrar
-              </Stack>
-            ),
-            NoResultsOverlay: () => (
-              <Stack height="100%" alignItems="center" justifyContent="center">
-                No hay resultados para mostrar
-              </Stack>
-            )
-          }}
-        />
-      )}
+      {!isLoading && <WeekTabs data={rows} onRefresh={handleRefresh} />}
       <Dialog open={openDialog} onClose={handleDialog}>
         <DialogTitle>Mensaje</DialogTitle>
         <DialogContent>

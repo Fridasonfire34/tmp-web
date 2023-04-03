@@ -7,8 +7,16 @@ import {
 } from '@mui/icons-material';
 import { LoadingButton } from '@mui/lab';
 import {
+  Box,
+  Card,
+  CardContent,
   Container,
+  FormControl,
+  FormHelperText,
   IconButton,
+  InputAdornment,
+  InputLabel,
+  OutlinedInput,
   Stack,
   TextField,
   Typography
@@ -18,7 +26,7 @@ import { useRouter } from 'next/router';
 import { signIn, SignInResponse } from 'next-auth/react';
 
 type Inputs = {
-  email: string;
+  employeeId: string;
   password: string;
 };
 
@@ -28,10 +36,15 @@ export default function SignInPage() {
 
   const router = useRouter();
 
-  const handleShowPassword = () => {
-    setShowPassword(!showPassword);
+  const handleClickShowPassword = () => {
+    setShowPassword(show => !show);
   };
 
+  const handleMouseDownPassword = (
+    event: React.MouseEvent<HTMLButtonElement>
+  ) => {
+    event.preventDefault();
+  };
   const {
     register,
     handleSubmit,
@@ -39,11 +52,11 @@ export default function SignInPage() {
   } = useForm<Inputs>();
 
   const onSubmit: SubmitHandler<Inputs> = data => {
-    const { email, password } = data;
+    const { employeeId, password } = data;
     setLoading(true);
     signIn('credentials', {
-      email,
-      password: password,
+      employeeId,
+      password,
       redirect: false
     })
       .then(res => {
@@ -66,56 +79,87 @@ export default function SignInPage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="icon" href="/favicon.ico" />
       </Head>
-      <Typography variant="h2">Iniciar sesión</Typography>
-      <form onSubmit={handleSubmit(onSubmit)}>
-        <Stack gap={2} my={3}>
-          <TextField
-            placeholder="Correo electrónico"
-            {...register('email', {
-              required: 'El correo electrónico es inválido',
-              pattern: {
-                value: /^[A-Z0-9._%+-]+@[A-Z0-9.-]+\.[A-Z]{2,}$/i,
-                message: 'El correo electrónico es inválido'
-              }
-            })}
-            error={!!errors.email}
-            helperText={errors.email?.message}
-          />
-          <Stack direction="row" alignItems="center" gap={2}>
-            <TextField
-              fullWidth
-              type={showPassword ? 'text' : 'password'}
-              placeholder="Contraseña"
-              {...register('password', {
-                required: 'La contraseña es inválida',
-                minLength: {
-                  value: 6,
-                  message: 'La contraseña debe incluir 6 caracteres'
-                }
-              })}
-              error={!!errors.password}
-              helperText={errors.password?.message}
-            />
-            {showPassword ? (
-              <IconButton onClick={handleShowPassword}>
-                <VisibilityIcon />
-              </IconButton>
-            ) : (
-              <IconButton onClick={handleShowPassword}>
-                <VisibilityOffIcon />
-              </IconButton>
-            )}
-          </Stack>
-          <LoadingButton
-            loading={loading}
-            variant="contained"
-            size="large"
-            type="submit"
-          >
-            Iniciar sesión
-          </LoadingButton>
-        </Stack>
-      </form>
+      <Box
+        sx={{
+          display: 'flex',
+          justifyContent: 'center',
+          alignItems: 'center',
+          minHeight: '100vh',
+          width: '100%'
+        }}
+      >
+        <Card
+          sx={{
+            width: '100%'
+          }}
+        >
+          <CardContent>
+            <Stack spacing={2}>
+              <Typography variant="h4">Inicio de sesión</Typography>
+              <Typography variant="body2" color="textSecondary">
+                Inicia sesión con tu número de empleado y contraseña
+              </Typography>
+            </Stack>
+            <form onSubmit={handleSubmit(onSubmit)}>
+              <Stack gap={2} my={3}>
+                <TextField
+                  label="No. de empleado"
+                  {...register('employeeId', {
+                    required: 'El número de empleado es requerido'
+                  })}
+                  error={!!errors.employeeId}
+                  helperText={errors.employeeId?.message}
+                />
+                <FormControl variant="outlined" error={!!errors.password}>
+                  <InputLabel htmlFor="outlined-adornment-password">
+                    Contraseña
+                  </InputLabel>
+                  <OutlinedInput
+                    id="outlined-adornment-password"
+                    type={showPassword ? 'text' : 'password'}
+                    endAdornment={
+                      <InputAdornment position="end">
+                        <IconButton
+                          aria-label="toggle password visibility"
+                          onClick={handleClickShowPassword}
+                          onMouseDown={handleMouseDownPassword}
+                          edge="end"
+                        >
+                          {showPassword ? (
+                            <VisibilityOffIcon />
+                          ) : (
+                            <VisibilityIcon />
+                          )}
+                        </IconButton>
+                      </InputAdornment>
+                    }
+                    label="Password"
+                    fullWidth
+                    placeholder="Contraseña"
+                    {...register('password', {
+                      required: 'La contraseña es inválida',
+                      minLength: {
+                        value: 6,
+                        message: 'La contraseña debe incluir 6 caracteres'
+                      }
+                    })}
+                    error={!!errors.password}
+                  />
+                  <FormHelperText>{errors.password?.message}</FormHelperText>
+                </FormControl>
+                <LoadingButton
+                  loading={loading}
+                  variant="contained"
+                  size="large"
+                  type="submit"
+                >
+                  Iniciar sesión
+                </LoadingButton>
+              </Stack>
+            </form>
+          </CardContent>
+        </Card>
+      </Box>
       <Toaster position="top-right" />
     </Container>
   );
