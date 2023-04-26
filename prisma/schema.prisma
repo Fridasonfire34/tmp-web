@@ -41,3 +41,21 @@ model Inventory {
 
   @@map(name: "inventories")
 }
+
+model InventoryHistory {
+  id            String   @id @default(cuid())
+  partNumber    String
+  buildSequence Float
+  balloonNumber String?
+  quantity      Float
+  poNo          String?
+  vendorNo      Float
+  packingDiskNo Float
+  line          String
+  scannedBy     String?
+  week          String
+  createdAt     DateTime @default(now()) @map(name: "created_at")
+  updatedAt     DateTime @updatedAt @map(name: "updated_at")
+
+  @@map(name: "inventory_histories")
+}

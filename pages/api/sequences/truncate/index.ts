@@ -31,6 +31,10 @@ export default async function handler(
         stack: null
       });
     try {
+      const inventory = await prisma.inventory.findMany();
+      await prisma.inventoryHistory.createMany({
+        data: inventory
+      });
       await prisma.inventory.deleteMany();
       return res.status(200).json({
         success: true,
