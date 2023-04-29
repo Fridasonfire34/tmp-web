@@ -87,6 +87,8 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
   const [showPassword, setShowPassword] = useState(false);
   const [userHasVerified, setUserHasVerified] = useState(false);
   const [week, setWeek] = useState(null);
+  const [isDeleteSelected, setIsDeleteSelected] = useState(false);
+  const [sequenceId, setSequenceId] = useState(null);
 
   const { data: client } = useSession();
 
@@ -136,7 +138,13 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
       width: 80,
       renderCell: cell => (
         <Stack direction="row" spacing={1}>
-          <Button onClick={() => handleDelete(cell.row.id)}>
+          <Button
+            onClick={() => {
+              setOpenDialog(true);
+              setIsDeleteSelected(true);
+              setSequenceId(cell.row.id);
+            }}
+          >
             <DeleteIcon
               sx={{
                 '&:hover': {
@@ -150,11 +158,11 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
     }
   ];
 
-  const handleDelete = (id: string) => {
+  const handleDelete = () => {
     toast.loading('Eliminando registro...');
     axios({
       method: 'DELETE',
-      url: `/api/sequences/remove?packingId=${id}`,
+      url: `/api/sequences/remove?packingId=${sequenceId}`,
       headers: {
         id: client?.user.id as string
       }
@@ -168,6 +176,10 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
       })
       .finally(() => {
         toast.dismiss();
+        handleDialog();
+        setSequenceId(null);
+        setIsDeleteSelected(false);
+        setPassword('');
       });
   };
 
@@ -375,8 +387,9 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
         <DialogTitle>Mensaje</DialogTitle>
         <DialogContent>
           <DialogContentText>
-            Para poder eliminar el listado de secuencias, por favor ingresa tu
-            contraseña.
+            {isDeleteSelected
+              ? `Para elimimar la secuencia con el id: ${sequenceId}, por favor ingresa tu contraseña.`
+              : ' Para poder eliminar el listado de secuencias, por favor ingresa tu contraseña.'}
           </DialogContentText>
           <FormControl fullWidth focused variant="outlined" sx={{ mt: 3 }}>
             <InputLabel htmlFor="outlined-adornment-password">
@@ -410,7 +423,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
           <Button onClick={handleDialog}>Cancelar</Button>
           <Button
             color="error"
-            onClick={handleDropWeek}
+            onClick={isDeleteSelected ? handleDelete : handleDropWeek}
             disabled={!password.length}
           >
             Confirmar
