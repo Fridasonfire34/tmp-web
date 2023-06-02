@@ -4,24 +4,12 @@ import toast from 'react-hot-toast';
 import { useQuery } from 'react-query';
 import {
   Delete as DeleteIcon,
-  GetApp as DownloadIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon
+  GetApp as DownloadIcon
 } from '@mui/icons-material';
 import {
   Box,
   Button,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  InputLabel,
-  OutlinedInput,
   Stack,
   Typography
 } from '@mui/material';
@@ -30,6 +18,7 @@ import FilePondPluginFileValidateType from 'filepond-plugin-file-validate-type';
 import Head from 'next/head';
 import { useSession } from 'next-auth/react';
 
+import DialogDeleteSequenceList from '@/src/components/dialogs/delete-sequence-list';
 import Layout from '@/src/components/layout';
 import WeekTabs from '@/src/components/tabs';
 import { groupArray } from '@/src/utils/data';
@@ -41,7 +30,6 @@ export default function SequencesPage() {
   const [files, setFiles] = useState<any[]>([]);
   const [openDialog, setOpenDialog] = useState(false);
   const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [userHasVerified, setUserHasVerified] = useState(false);
   const [rows, setRows] = useState<any[]>([]);
 
@@ -77,8 +65,9 @@ export default function SequencesPage() {
       .catch(() => toast.error('Ha ocurrido un error al descargar el reporte'));
   };
 
-  const handleDrop = () => {
-    handleDialog();
+  const handleDrop = (password: string) => {
+    setPassword(password);
+    setOpenDialog(false);
     axios('/api/users/verify', {
       headers: {
         id: client?.user.id as string,
@@ -102,10 +91,6 @@ export default function SequencesPage() {
     refetch();
   }, [refetch]);
 
-  const handleDialog = useCallback(() => {
-    setOpenDialog(!openDialog);
-  }, [openDialog]);
-
   useEffect(() => {
     if (userHasVerified) {
       toast.loading('Limpiando listado...');
@@ -128,7 +113,7 @@ export default function SequencesPage() {
           refetch();
         });
     }
-  }, [client?.user.id, handleDialog, password, refetch, userHasVerified]);
+  }, [client?.user.id, password, refetch, userHasVerified]);
 
   useEffect(() => {
     if (!isLoading && data?.stack?.length > 0) {
@@ -185,7 +170,7 @@ export default function SequencesPage() {
         </Typography>
         <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
           <Button
-            variant="outlined"
+            variant="contained"
             endIcon={<DownloadIcon />}
             disabled={isLoading || !data?.stack?.length}
             onClick={handleExport}
@@ -193,11 +178,11 @@ export default function SequencesPage() {
             Descargar reporte
           </Button>
           <Button
-            variant="outlined"
+            variant="contained"
             color="error"
             startIcon={<DeleteIcon />}
             disabled={isLoading || !data?.stack?.length}
-            onClick={handleDialog}
+            onClick={() => setOpenDialog(true)}
           >
             Limpiar listado general
           </Button>
@@ -247,52 +232,11 @@ export default function SequencesPage() {
         </Stack>
       )}
       {!isLoading && <WeekTabs data={rows} onRefresh={handleRefresh} />}
-      <Dialog open={openDialog} onClose={handleDialog}>
-        <DialogTitle>Mensaje</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Para poder eliminar el listado de secuencias, por favor ingresa tu
-            contraseña.
-          </DialogContentText>
-          <FormControl fullWidth focused variant="outlined" sx={{ mt: 3 }}>
-            <InputLabel htmlFor="outlined-adornment-password">
-              Contraseña
-            </InputLabel>
-            <OutlinedInput
-              autoFocus
-              fullWidth
-              margin="dense"
-              label="Contraseña"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              id="outlined-adornment-password"
-              type={showPassword ? 'text' : 'password'}
-              endAdornment={
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowPassword(!showPassword)}
-                    onMouseDown={e => e.preventDefault()}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                </InputAdornment>
-              }
-            />
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDialog}>Cancelar</Button>
-          <Button
-            color="error"
-            onClick={handleDrop}
-            disabled={!password.length}
-          >
-            Confirmar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DialogDeleteSequenceList
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        onConfirm={handleDrop}
+      />
     </Layout>
   );
 }

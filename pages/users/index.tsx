@@ -49,7 +49,6 @@ export default function UsersPage() {
   const [form, setForm] = useState({
     employeeId: '',
     name: '',
-    email: '',
     password: '',
     repeatPassword: ''
   });
@@ -82,11 +81,6 @@ export default function UsersPage() {
       width: 200
     },
     {
-      field: 'email',
-      headerName: 'Correo electrónico',
-      width: 200
-    },
-    {
       field: 'role',
       headerName: 'Tipo de empleado',
       width: 200,
@@ -116,7 +110,6 @@ export default function UsersPage() {
     setForm({
       employeeId: user.employeeId as string,
       name: user.name as string,
-      email: user.email as string,
       password: '',
       repeatPassword: ''
     });
@@ -154,7 +147,6 @@ export default function UsersPage() {
     setForm({
       employeeId: '',
       name: '',
-      email: '',
       password: '',
       repeatPassword: ''
     });
@@ -169,7 +161,6 @@ export default function UsersPage() {
     const data = {
       employeeId: form.employeeId,
       name: form.name,
-      email: form.email,
       employeeType: employeeType
     };
     setLoading(true);
@@ -198,7 +189,6 @@ export default function UsersPage() {
     const data = {
       employeeId: form.employeeId,
       name: form.name,
-      email: form.email,
       password: encrypt(form.password),
       employeeType: employeeType
     };
@@ -237,7 +227,6 @@ export default function UsersPage() {
     if (isEdit) {
       return (
         employeeType.length > 0 &&
-        form.email.length > 0 &&
         form.employeeId.length > 0 &&
         form.name.length > 0
       );
@@ -245,14 +234,12 @@ export default function UsersPage() {
     return (
       form.employeeId.length >= 4 &&
       form.name &&
-      isValidEmail(form.email) &&
       form.password.length >= 6 &&
       form.repeatPassword === form.password &&
       employeeType.length
     );
   }, [
     employeeType.length,
-    form.email,
     form.employeeId.length,
     form.name,
     form.password,
@@ -267,7 +254,7 @@ export default function UsersPage() {
       );
       setRows(removeCurrentClient);
     }
-  }, [client?.user.email, client?.user.id, data?.stack]);
+  }, [client?.user.id, data?.stack]);
 
   return (
     <Layout>
@@ -366,22 +353,6 @@ export default function UsersPage() {
               onChange={e => setForm({ ...form, name: e.target.value })}
               error={!form.name.length}
               helperText={form.name.length ? '' : 'Nombre de empleado inválido'}
-            />
-            <TextField
-              fullWidth
-              required
-              autoComplete="off"
-              type="email"
-              label="Correo electrónico de empleado"
-              disabled={isEdit}
-              value={form.email}
-              onChange={e => setForm({ ...form, email: e.target.value })}
-              error={!form.email.length}
-              helperText={
-                form.email.length
-                  ? ''
-                  : 'Correo electrónico de empleado inválido'
-              }
             />
             {!isEdit && (
               <>
