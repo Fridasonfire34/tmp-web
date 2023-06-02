@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import SwipeableViews from 'react-swipeable-views';
 import {
@@ -6,9 +6,7 @@ import {
   Delete as DeleteIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
-  Tune as TuneIcon,
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon
+  Tune as TuneIcon
 } from '@mui/icons-material';
 import {
   Box,
@@ -16,21 +14,11 @@ import {
   Card,
   CardContent,
   Collapse,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
   Divider,
-  FormControl,
-  IconButton,
-  InputAdornment,
-  InputLabel,
   List,
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  OutlinedInput,
   Stack,
   Tab,
   Tabs,
@@ -39,10 +27,11 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import axios from 'axios';
+import { format } from 'date-fns';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 
-import { formatDateWithTime } from '@/src/utils/data';
+import DialogDeleteSequence from '../dialogs/delete-sequence';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -83,12 +72,11 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
   const [value, setValue] = useState(0);
   const [openMenuTable, setOpenMenuTable] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
-  const [password, setPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
   const [userHasVerified, setUserHasVerified] = useState(false);
-  const [week, setWeek] = useState(null);
-  const [isDeleteSelected, setIsDeleteSelected] = useState(false);
   const [sequenceId, setSequenceId] = useState(null);
+  const [weekId, setWeekId] = useState(null);
+  const [deleteType, setDeleteType] = useState<'sequence' | 'week'>('sequence');
+  const [password, setPassword] = useState('');
 
   const { data: client } = useSession();
 
@@ -141,8 +129,8 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
           <Button
             onClick={() => {
               setOpenDialog(true);
-              setIsDeleteSelected(true);
               setSequenceId(cell.row.id);
+              setDeleteType('sequence');
             }}
           >
             <DeleteIcon
@@ -157,31 +145,6 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
       )
     }
   ];
-
-  const handleDelete = () => {
-    toast.loading('Eliminando registro...');
-    axios({
-      method: 'DELETE',
-      url: `/api/sequences/remove?packingId=${sequenceId}`,
-      headers: {
-        id: client?.user.id as string
-      }
-    })
-      .then(() => {
-        toast.success('Registro eliminado correctamente.');
-        onRefresh();
-      })
-      .catch(() => {
-        toast.error('Ocurrió un error al eliminar el registro.');
-      })
-      .finally(() => {
-        toast.dismiss();
-        handleDialog();
-        setSequenceId(null);
-        setIsDeleteSelected(false);
-        setPassword('');
-      });
-  };
 
   const handleChange = (_: React.SyntheticEvent, newValue: number) => {
     setValue(newValue);
@@ -202,8 +165,9 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
     });
   };
 
-  const handleDropWeek = () => {
-    handleDialog();
+  const handleVerifyUser = (password: string) => {
+    setPassword(password);
+    setOpenDialog(false);
     axios('/api/users/verify', {
       headers: {
         id: client?.user.id as string,
@@ -217,39 +181,67 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
       .catch(() => {
         toast.error('Contraseña incorrecta');
         setUserHasVerified(false);
-      })
-      .finally(() => {
         setPassword('');
       });
   };
 
-  const handleDialog = useCallback(() => {
-    setOpenDialog(!openDialog);
-  }, [openDialog]);
-
   useEffect(() => {
     if (userHasVerified) {
-      toast.loading('Limpiando listado...');
-      axios(`/api/sequences/truncate/week?week=${week}`, {
-        method: 'DELETE',
-        headers: {
-          id: client?.user.id as string,
-          password: password
-        }
-      })
-        .then(() => {
-          toast.success('Listado limpiado');
+      setOpenDialog(false);
+      if (deleteType === 'sequence') {
+        toast.loading('Eliminando registro...');
+        axios({
+          method: 'DELETE',
+          url: `/api/sequences/remove?packingId=${sequenceId}`,
+          headers: {
+            id: client?.user.id as string
+          }
         })
-        .catch(() => {
-          toast.error('Ha ocurrido un error al limpiar el listado');
+          .then(() => {
+            toast.success('Registro eliminado correctamente.');
+            onRefresh();
+          })
+          .catch(() => {
+            toast.error('Ocurrió un error al eliminar el registro.');
+          })
+          .finally(() => {
+            toast.dismiss();
+            setSequenceId(null);
+            setUserHasVerified(false);
+          });
+      } else {
+        toast.loading('Limpiando listado...');
+        axios(`/api/sequences/truncate/week?week=${weekId}`, {
+          method: 'DELETE',
+          headers: {
+            id: client?.user.id as string,
+            password: password
+          }
         })
-        .finally(() => {
-          setUserHasVerified(false);
-          toast.dismiss();
-          router.reload();
-        });
+          .then(() => {
+            toast.success('Listado limpiado');
+          })
+          .catch(() => {
+            toast.error('Ha ocurrido un error al limpiar el listado');
+          })
+          .finally(() => {
+            setUserHasVerified(false);
+            toast.dismiss();
+            router.reload();
+            setPassword('');
+          });
+      }
     }
-  }, [client?.user.id, password, router, userHasVerified, week]);
+  }, [
+    client?.user.id,
+    deleteType,
+    onRefresh,
+    password,
+    router,
+    sequenceId,
+    userHasVerified,
+    weekId
+  ]);
 
   return (
     <Box>
@@ -285,151 +277,122 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
                 index={value}
                 onChangeIndex={handleChangeIndex}
               >
-                {data?.map((week, index) => (
-                  <TabPanel
-                    key={index}
-                    value={value}
-                    index={index}
-                    dir={theme.direction}
-                  >
-                    <Stack
-                      direction="row"
-                      justifyContent="space-between"
-                      mb={1}
+                {data?.map((week, index) => {
+                  return (
+                    <TabPanel
+                      key={index}
+                      value={value}
+                      index={index}
+                      dir={theme.direction}
                     >
-                      <Typography variant="subtitle1" gutterBottom>
-                        Total de registros: <b>{week?.stack?.length}</b> en la
-                        semana <b>{week.week}</b>
-                      </Typography>
-                      <Typography align="right" variant="body1" gutterBottom>
-                        Fecha de registro:{' '}
-                        <b>{formatDateWithTime(week.updateAt)}</b>
-                      </Typography>
-                    </Stack>
-                    <List
-                      aria-labelledby="nested-list-subheader"
-                      sx={{
-                        mb: 2,
-                        bgcolor: 'rgba(0,0,0,0.1)',
-                        borderRadius: 2
-                      }}
-                    >
-                      <ListItemButton onClick={handleMenuTable}>
-                        <ListItemIcon>
-                          <TuneIcon />
-                        </ListItemIcon>
-                        <ListItemText primary="Opciones de secuencias" />
-                        {openMenuTable ? (
-                          <ExpandLessIcon />
-                        ) : (
-                          <ExpandMoreIcon />
-                        )}
-                      </ListItemButton>
-                      <Collapse in={openMenuTable} timeout="auto" unmountOnExit>
-                        <List component="div" disablePadding>
-                          <ListItemButton
-                            sx={{ pl: 4 }}
-                            onClick={() => handleAdd(week.week)}
-                          >
-                            <ListItemIcon>
-                              <AddIcon />
-                            </ListItemIcon>
-                            <ListItemText primary="Añadir nueva secuencia a la semana actual" />
-                          </ListItemButton>
-                          <ListItemButton
-                            sx={{ pl: 4, color: 'red' }}
-                            onClick={() => {
-                              setWeek(week.week);
-                              handleDialog();
-                            }}
-                          >
-                            <ListItemIcon>
-                              <DeleteIcon color="error" />
-                            </ListItemIcon>
-                            <ListItemText primary="Eliminar todas las secuencias de la semana actual" />
-                          </ListItemButton>
-                        </List>
-                      </Collapse>
-                    </List>
-                    <DataGrid
-                      autoHeight
-                      rows={week?.stack ?? []}
-                      columns={columns}
-                      components={{
-                        NoRowsOverlay: () => (
-                          <Stack
-                            height="100%"
-                            alignItems="center"
-                            justifyContent="center"
-                          >
-                            No hay datos para mostrar
-                          </Stack>
-                        ),
-                        NoResultsOverlay: () => (
-                          <Stack
-                            height="100%"
-                            alignItems="center"
-                            justifyContent="center"
-                          >
-                            No hay resultados para mostrar
-                          </Stack>
-                        )
-                      }}
-                    />
-                  </TabPanel>
-                ))}
+                      <Stack
+                        direction="row"
+                        justifyContent="space-between"
+                        mb={1}
+                      >
+                        <Typography variant="subtitle1" gutterBottom>
+                          Total de registros: <b>{week?.stack?.length}</b> en la
+                          semana <b>{week.week}</b>
+                        </Typography>
+                        <Typography align="right" variant="body1" gutterBottom>
+                          Fecha de registro:{' '}
+                          <b>
+                            {format(
+                              new Date(week?.updateAt),
+                              'dd/MM/yyyy HH:mm:ss'
+                            )}
+                          </b>
+                        </Typography>
+                      </Stack>
+                      <List
+                        aria-labelledby="nested-list-subheader"
+                        sx={{
+                          mb: 2,
+                          bgcolor: 'rgba(0,0,0,0.1)',
+                          borderRadius: 2
+                        }}
+                      >
+                        <ListItemButton onClick={handleMenuTable}>
+                          <ListItemIcon>
+                            <TuneIcon />
+                          </ListItemIcon>
+                          <ListItemText primary="Opciones de secuencias" />
+                          {openMenuTable ? (
+                            <ExpandLessIcon />
+                          ) : (
+                            <ExpandMoreIcon />
+                          )}
+                        </ListItemButton>
+                        <Collapse
+                          in={openMenuTable}
+                          timeout="auto"
+                          unmountOnExit
+                        >
+                          <List component="div" disablePadding>
+                            <ListItemButton
+                              sx={{ pl: 4 }}
+                              onClick={() => handleAdd(week.week)}
+                            >
+                              <ListItemIcon>
+                                <AddIcon />
+                              </ListItemIcon>
+                              <ListItemText primary="Añadir nueva secuencia a la semana actual" />
+                            </ListItemButton>
+                            <ListItemButton
+                              sx={{ pl: 4, color: 'red' }}
+                              onClick={() => {
+                                setDeleteType('week');
+                                setWeekId(week.week);
+                                setOpenDialog(true);
+                              }}
+                            >
+                              <ListItemIcon>
+                                <DeleteIcon color="error" />
+                              </ListItemIcon>
+                              <ListItemText primary="Eliminar todas las secuencias de la semana actual" />
+                            </ListItemButton>
+                          </List>
+                        </Collapse>
+                      </List>
+                      <DataGrid
+                        autoHeight
+                        rows={week?.stack ?? []}
+                        columns={columns}
+                        components={{
+                          NoRowsOverlay: () => (
+                            <Stack
+                              height="100%"
+                              alignItems="center"
+                              justifyContent="center"
+                            >
+                              No hay datos para mostrar
+                            </Stack>
+                          ),
+                          NoResultsOverlay: () => (
+                            <Stack
+                              height="100%"
+                              alignItems="center"
+                              justifyContent="center"
+                            >
+                              No hay resultados para mostrar
+                            </Stack>
+                          )
+                        }}
+                      />
+                    </TabPanel>
+                  );
+                })}
               </SwipeableViews>
             </>
           )}
         </CardContent>
       </Card>
-      <Dialog open={openDialog} onClose={handleDialog}>
-        <DialogTitle>Mensaje</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            {isDeleteSelected
-              ? `Para elimimar la secuencia con el id: ${sequenceId}, por favor ingresa tu contraseña.`
-              : ' Para poder eliminar el listado de secuencias, por favor ingresa tu contraseña.'}
-          </DialogContentText>
-          <FormControl fullWidth focused variant="outlined" sx={{ mt: 3 }}>
-            <InputLabel htmlFor="outlined-adornment-password">
-              Contraseña
-            </InputLabel>
-            <OutlinedInput
-              autoFocus
-              fullWidth
-              margin="dense"
-              label="Contraseña"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              id="outlined-adornment-password"
-              type={showPassword ? 'text' : 'password'}
-              endAdornment={
-                <InputAdornment position="end">
-                  <IconButton
-                    aria-label="toggle password visibility"
-                    onClick={() => setShowPassword(!showPassword)}
-                    onMouseDown={e => e.preventDefault()}
-                    edge="end"
-                  >
-                    {showPassword ? <VisibilityOffIcon /> : <VisibilityIcon />}
-                  </IconButton>
-                </InputAdornment>
-              }
-            />
-          </FormControl>
-        </DialogContent>
-        <DialogActions>
-          <Button onClick={handleDialog}>Cancelar</Button>
-          <Button
-            color="error"
-            onClick={isDeleteSelected ? handleDelete : handleDropWeek}
-            disabled={!password.length}
-          >
-            Confirmar
-          </Button>
-        </DialogActions>
-      </Dialog>
+      <DialogDeleteSequence
+        id={sequenceId || weekId}
+        open={openDialog}
+        onClose={() => setOpenDialog(false)}
+        onConfirm={handleVerifyUser}
+      />
     </Box>
   );
 };
