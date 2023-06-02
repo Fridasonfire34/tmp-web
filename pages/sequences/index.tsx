@@ -170,7 +170,7 @@ export default function SequencesPage() {
         </Typography>
         <Stack direction={{ xs: 'column', sm: 'row' }} gap={2}>
           <Button
-            variant="outlined"
+            variant="contained"
             endIcon={<DownloadIcon />}
             disabled={isLoading || !data?.stack?.length}
             onClick={handleExport}
@@ -178,7 +178,7 @@ export default function SequencesPage() {
             Descargar reporte
           </Button>
           <Button
-            variant="outlined"
+            variant="contained"
             color="error"
             startIcon={<DeleteIcon />}
             disabled={isLoading || !data?.stack?.length}

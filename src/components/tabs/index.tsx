@@ -4,17 +4,18 @@ import SwipeableViews from 'react-swipeable-views';
 import {
   Add as AddIcon,
   Delete as DeleteIcon,
+  Edit as EditIcon,
   ExpandLess as ExpandLessIcon,
   ExpandMore as ExpandMoreIcon,
   Tune as TuneIcon
 } from '@mui/icons-material';
 import {
   Box,
-  Button,
   Card,
   CardContent,
   Collapse,
   Divider,
+  IconButton,
   List,
   ListItemButton,
   ListItemIcon,
@@ -27,11 +28,12 @@ import {
 import { useTheme } from '@mui/material/styles';
 import { DataGrid, GridColDef } from '@mui/x-data-grid';
 import axios from 'axios';
-import { format } from 'date-fns';
+import { format, set } from 'date-fns';
 import { useRouter } from 'next/router';
 import { useSession } from 'next-auth/react';
 
 import DialogDeleteSequence from '../dialogs/delete-sequence';
+import DialogEditSequence from '../dialogs/edit-sequence';
 
 interface TabPanelProps {
   children?: React.ReactNode;
@@ -68,15 +70,28 @@ type WeekTabsProps = {
   onRefresh: () => void;
 };
 
+type Sequence = {
+  id: string;
+  partNumber: string;
+  buildSequence: string;
+  quantity: number;
+  packingDiskNo: string;
+  scannedBy: string;
+};
+
 const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
   const [value, setValue] = useState(0);
   const [openMenuTable, setOpenMenuTable] = useState(false);
   const [openDialog, setOpenDialog] = useState(false);
+  const [openDialogEdit, setOpenDialogEdit] = useState(false);
   const [userHasVerified, setUserHasVerified] = useState(false);
   const [sequenceId, setSequenceId] = useState(null);
-  const [weekId, setWeekId] = useState(null);
-  const [deleteType, setDeleteType] = useState<'sequence' | 'week'>('sequence');
   const [password, setPassword] = useState('');
+  const [weekId, setWeekId] = useState(null);
+  const [deleteType, setDeleteType] = useState<'sequence' | 'week' | 'edit'>(
+    'sequence'
+  );
+  const [editSequence, setEditSequence] = useState<Sequence | null>(null);
 
   const { data: client } = useSession();
 
@@ -85,11 +100,11 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
 
   const columns: GridColDef[] = [
     { field: 'id', headerName: 'ID', width: 50 },
-    { field: 'partNumber', headerName: 'Part Number', width: 200 },
+    { field: 'partNumber', headerName: 'Part Number', width: 180 },
     {
       field: 'buildSequence',
       headerName: 'Build Sequence',
-      width: 150
+      width: 130
     },
     {
       field: 'quantity',
@@ -123,14 +138,39 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
     {
       field: 'actions',
       headerName: 'Acciones',
-      width: 80,
+      width: 100,
       renderCell: cell => (
-        <Stack direction="row" spacing={1}>
-          <Button
+        <Stack width="100%" direction="row">
+          <IconButton
+            color="primary"
             onClick={() => {
               setOpenDialog(true);
+              setDeleteType('edit');
               setSequenceId(cell.row.id);
+              setEditSequence({
+                id: cell.row.id,
+                partNumber: cell.row.partNumber,
+                buildSequence: cell.row.buildSequence,
+                quantity: cell.row.quantity,
+                packingDiskNo: cell.row.packingDiskNo,
+                scannedBy: cell.row.scannedBy
+              });
+            }}
+          >
+            <EditIcon
+              sx={{
+                '&:hover': {
+                  color: 'orange'
+                }
+              }}
+            />
+          </IconButton>
+          <IconButton
+            color="secondary"
+            onClick={() => {
+              setOpenDialog(true);
               setDeleteType('sequence');
+              setSequenceId(cell.row.id);
             }}
           >
             <DeleteIcon
@@ -140,7 +180,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
                 }
               }}
             />
-          </Button>
+          </IconButton>
         </Stack>
       )
     }
@@ -185,6 +225,31 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
       });
   };
 
+  const handleUpdateSequence = (sequence: Sequence) => {
+    toast.loading('Actualizando registro...');
+    setOpenDialogEdit(false);
+    setEditSequence(null);
+    axios({
+      method: 'PUT',
+      url: '/api/sequences/update',
+      data: {
+        ...sequence
+      },
+      headers: {
+        id: client?.user.id as string
+      }
+    })
+      .then(() => {
+        toast.dismiss();
+        toast.success('Registro actualizado correctamente.');
+        onRefresh();
+      })
+      .catch(() => {
+        toast.dismiss();
+        toast.error('Ocurrió un error al actualizar el registro.');
+      });
+  };
+
   useEffect(() => {
     if (userHasVerified) {
       setOpenDialog(false);
@@ -209,7 +274,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
             setSequenceId(null);
             setUserHasVerified(false);
           });
-      } else {
+      } else if (deleteType === 'week') {
         toast.loading('Limpiando listado...');
         axios(`/api/sequences/truncate/week?week=${weekId}`, {
           method: 'DELETE',
@@ -230,6 +295,10 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
             router.reload();
             setPassword('');
           });
+      } else {
+        setOpenDialogEdit(true);
+        setPassword('');
+        setUserHasVerified(false);
       }
     }
   }, [
@@ -392,6 +461,12 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         onConfirm={handleVerifyUser}
+      />
+      <DialogEditSequence
+        open={openDialogEdit}
+        sequence={editSequence}
+        onClose={() => setOpenDialogEdit(false)}
+        onConfirm={handleUpdateSequence}
       />
     </Box>
   );
