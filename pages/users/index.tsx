@@ -1,31 +1,14 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { toast } from 'react-hot-toast';
 import { useQuery } from 'react-query';
-import {
-  Visibility as VisibilityIcon,
-  VisibilityOff as VisibilityOffIcon
-} from '@mui/icons-material';
+import DeleteIcon from '@mui/icons-material/Delete';
 import EditIcon from '@mui/icons-material/Edit';
-import { LoadingButton } from '@mui/lab';
 import {
+  Box,
   Button,
   CircularProgress,
-  Dialog,
-  DialogActions,
-  DialogContent,
-  DialogContentText,
-  DialogTitle,
-  FormControl,
-  FormHelperText,
   IconButton,
-  InputAdornment,
-  InputLabel,
-  MenuItem,
-  OutlinedInput,
-  Select,
-  SelectChangeEvent,
   Stack,
-  TextField,
   Typography
 } from '@mui/material';
 import { DataGrid, GridColDef, GridRenderCellParams } from '@mui/x-data-grid';
@@ -35,23 +18,18 @@ import Head from 'next/head';
 import { useSession } from 'next-auth/react';
 
 import { encrypt } from '@/lib/crypto';
+import DialogAddUser, { UserForm } from '@/src/components/dialogs/add-user';
+import DialogEditUser from '@/src/components/dialogs/edit-user';
 import Layout from '@/src/components/layout';
-import { isValidEmail } from '@/src/utils/masks';
 
 export default function UsersPage() {
   const [rows, setRows] = useState([]);
-  const [openDialog, setOpenDialog] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [showPassword, setShowPassword] = useState(false);
-  const [showRepeatPassword, setShowRepeatPassword] = useState(false);
-  const [employeeType, setEmployeeType] = useState('');
-  const [isEdit, setIsEdit] = useState(false);
-  const [form, setForm] = useState({
-    employeeId: '',
-    name: '',
-    password: '',
-    repeatPassword: ''
-  });
+  const [openDialogAddUser, setOpenDialogAddUser] = useState(false);
+  const [loadingAddUser, setLoadingAddUser] = useState(false);
+  const [currentUser, setCurrentUser] = useState<User | null>(null);
+  const [userEdit, setUserEdit] = useState<User | null>(null);
+  const [openDialogEditUser, setOpenDialogEditUser] = useState(false);
+  const [loadingEditUser, setLoadingEditUser] = useState(false);
 
   const { data: client } = useSession();
 
@@ -94,105 +72,45 @@ export default function UsersPage() {
       headerName: 'Acciones',
       width: 100,
       renderCell: (params: GridRenderCellParams) => (
-        <IconButton
-          color="secondary"
-          size="large"
-          onClick={() => handleEditUser(params.row as User)}
-        >
-          <EditIcon />
-        </IconButton>
+        <Stack direction="row" justifyContent="center" alignItems="center">
+          <IconButton
+            color="secondary"
+            size="large"
+            onClick={() => {
+              if (currentUser?.role?.toLowerCase() === 'admin') {
+                setUserEdit(params.row as User);
+                setOpenDialogEditUser(true);
+              } else {
+                toast.error('No tienes permisos para editar este usuario');
+              }
+            }}
+          >
+            <EditIcon />
+          </IconButton>
+          <IconButton
+            onClick={() => {
+              if (currentUser?.role?.toLowerCase() === 'admin') {
+                handleConfirmDeleteUser(params.row.id as string);
+              } else {
+                toast.error('No tienes permisos para eliminar este usuario');
+              }
+            }}
+          >
+            <DeleteIcon color="error" />
+          </IconButton>
+        </Stack>
       )
     }
   ];
 
-  const handleEditUser = (user: User) => {
-    setIsEdit(true);
-    setForm({
-      employeeId: user.employeeId as string,
-      name: user.name as string,
-      password: '',
-      repeatPassword: ''
-    });
-    setEmployeeType(user.role as string);
-    setOpenDialog(true);
-  };
-
-  const handleChangeEmployeeType = (event: SelectChangeEvent) => {
-    setEmployeeType(event.target.value as string);
-  };
-
-  const handleClickShowPassword = () => {
-    setShowPassword(show => !show);
-  };
-
-  const handleMouseDownPassword = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault();
-  };
-
-  const handleClickShowRepeatPassword = () => {
-    setShowRepeatPassword(show => !show);
-  };
-
-  const handleMouseDownRepeatPassword = (
-    event: React.MouseEvent<HTMLButtonElement>
-  ) => {
-    event.preventDefault();
-  };
-
-  const handleResetForm = () => {
-    setIsEdit(false);
-    setEmployeeType('');
-    setForm({
-      employeeId: '',
-      name: '',
-      password: '',
-      repeatPassword: ''
-    });
-  };
-
-  const handleDialog = () => {
-    handleResetForm();
-    setOpenDialog(!openDialog);
-  };
-
-  const handleUpdateEmployee = () => {
-    const data = {
-      employeeId: form.employeeId,
-      name: form.name,
-      employeeType: employeeType
-    };
-    setLoading(true);
-    axios('/api/users/update', {
-      method: 'PUT',
-      headers: {
-        id: client?.user.id as string
-      },
-      data
-    })
-      .then(() => {
-        toast.success('Usuario actualizado');
-        refetch();
-      })
-      .catch(() => {
-        toast.error('Error al actualizar el usuario');
-        handleResetForm();
-      })
-      .finally(() => {
-        handleResetForm();
-        setLoading(false);
-      });
-  };
-
-  const handleAddEmployee = () => {
+  const handleAddUser = (form: UserForm) => {
+    setLoadingAddUser(true);
     const data = {
       employeeId: form.employeeId,
       name: form.name,
       password: encrypt(form.password),
-      employeeType: employeeType
+      employeeType: form.employeeType
     };
-    setLoading(true);
     axios('/api/users/add', {
       method: 'POST',
       headers: {
@@ -206,46 +124,83 @@ export default function UsersPage() {
       })
       .catch(() => {
         toast.error('Error al registrar el usuario');
-        handleResetForm();
       })
       .finally(() => {
-        handleResetForm();
-        setLoading(false);
+        setLoadingAddUser(false);
+        setOpenDialogAddUser(false);
       });
   };
 
-  const onSubmit = () => {
-    setOpenDialog(false);
-    if (isEdit) {
-      handleUpdateEmployee();
-    } else {
-      handleAddEmployee();
-    }
+  const handleUpdateUser = (form: User) => {
+    setLoadingEditUser(true);
+    const data = {
+      employeeId: form.employeeId,
+      name: form.name
+    };
+    axios('/api/users/update', {
+      method: 'PUT',
+      headers: {
+        id: client?.user.id as string
+      },
+      data
+    })
+      .then(() => {
+        toast.success('Usuario actualizado');
+        refetch();
+      })
+      .catch(() => {
+        toast.error('Error al actualizar el usuario');
+      })
+      .finally(() => {
+        setLoadingEditUser(false);
+        setOpenDialogEditUser(false);
+      });
   };
 
-  const isValidForm = useMemo(() => {
-    if (isEdit) {
-      return (
-        employeeType.length > 0 &&
-        form.employeeId.length > 0 &&
-        form.name.length > 0
-      );
-    }
-    return (
-      form.employeeId.length >= 4 &&
-      form.name &&
-      form.password.length >= 6 &&
-      form.repeatPassword === form.password &&
-      employeeType.length
+  const handleConfirmDeleteUser = (id: string) => {
+    toast(
+      <Box>
+        <Typography variant="body1" gutterBottom>
+          ¿Estás seguro de eliminar este usuario?
+        </Typography>
+        <Stack direction="row" justifyContent="center" alignItems="center">
+          <Button fullWidth onClick={() => toast.dismiss()}>
+            Cancelar
+          </Button>
+          <Button
+            fullWidth
+            color="warning"
+            onClick={() => handleDeleteUser(id)}
+          >
+            Eliminar
+          </Button>
+        </Stack>
+      </Box>
     );
-  }, [
-    employeeType.length,
-    form.employeeId.length,
-    form.name,
-    form.password,
-    form.repeatPassword,
-    isEdit
-  ]);
+  };
+
+  const handleDeleteUser = (id: string) => {
+    toast.dismiss();
+    toast.loading('Eliminando usuario');
+    axios('/api/users/delete', {
+      method: 'DELETE',
+      headers: {
+        id: client?.user.id as string
+      },
+      data: {
+        employeeId: id
+      }
+    })
+      .then(() => {
+        toast.dismiss();
+        toast.success('Usuario eliminado');
+        refetch();
+      })
+      .catch(() => {
+        toast.dismiss();
+        toast.error('Error al eliminar el usuario');
+      });
+  };
 
   useEffect(() => {
     if (data?.stack?.length > 0) {
@@ -253,6 +208,9 @@ export default function UsersPage() {
         (user: User) => user.id !== client?.user.id
       );
       setRows(removeCurrentClient);
+      setCurrentUser(
+        data.stack.find((user: User) => user.id === client?.user.id)
+      );
     }
   }, [client?.user.id, data?.stack]);
 
@@ -284,7 +242,17 @@ export default function UsersPage() {
         >
           Total de usuarios registrados: {Number(data?.stack?.length) - 1 || 0}
         </Typography>
-        <Button variant="outlined" color="primary" onClick={handleDialog}>
+        <Button
+          variant="contained"
+          color="primary"
+          onClick={() => {
+            if (currentUser?.role?.toLocaleLowerCase() === 'admin') {
+              setOpenDialogAddUser(true);
+            } else {
+              toast.error('No tienes permisos para realizar esta acción');
+            }
+          }}
+        >
           Agregar usuario
         </Button>
       </Stack>
@@ -323,158 +291,19 @@ export default function UsersPage() {
           }}
         />
       )}
-      <Dialog open={openDialog} onClose={handleDialog}>
-        <DialogTitle>Agregar usuario</DialogTitle>
-        <DialogContent>
-          <DialogContentText>
-            Para agregar un nuevo empleado, es necesario llenar el formulario y
-            proporcionar su acceso.
-          </DialogContentText>
-          <Stack mt={2} gap={2}>
-            <TextField
-              fullWidth
-              required
-              disabled={isEdit}
-              label="Número de empleado"
-              type="number"
-              value={form.employeeId}
-              onChange={e => setForm({ ...form, employeeId: e.target.value })}
-              error={!form.employeeId.length}
-              helperText={
-                form.employeeId.length ? '' : 'Número de empleado inválido'
-              }
-            />
-            <TextField
-              fullWidth
-              required
-              type="text"
-              label="Nombre de empleado"
-              value={form.name}
-              onChange={e => setForm({ ...form, name: e.target.value })}
-              error={!form.name.length}
-              helperText={form.name.length ? '' : 'Nombre de empleado inválido'}
-            />
-            {!isEdit && (
-              <>
-                <FormControl
-                  fullWidth
-                  variant="outlined"
-                  error={!form.password.length}
-                >
-                  <InputLabel htmlFor="outlined-adornment-password">
-                    Contraseña
-                  </InputLabel>
-                  <OutlinedInput
-                    required
-                    label="Contraseña"
-                    id="outlined-adornment-password"
-                    autoComplete="new-password"
-                    value={form.password}
-                    onChange={e =>
-                      setForm({ ...form, password: e.target.value })
-                    }
-                    error={!form.password.length}
-                    type={showPassword ? 'text' : 'password'}
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle password visibility"
-                          onClick={handleClickShowPassword}
-                          onMouseDown={handleMouseDownPassword}
-                          edge="end"
-                        >
-                          {showPassword ? (
-                            <VisibilityOffIcon />
-                          ) : (
-                            <VisibilityIcon />
-                          )}
-                        </IconButton>
-                      </InputAdornment>
-                    }
-                  />
-                  <FormHelperText error={!form.password.length}>
-                    {form.password.length
-                      ? ''
-                      : 'La contraseña debe tener al menos 6 caracteres'}
-                  </FormHelperText>
-                </FormControl>
-                <FormControl
-                  fullWidth
-                  variant="outlined"
-                  error={
-                    !form.repeatPassword.length ||
-                    form.repeatPassword !== form.password
-                  }
-                >
-                  <InputLabel htmlFor="outlined-adornment-repeat-password">
-                    Repetir contraseña
-                  </InputLabel>
-                  <OutlinedInput
-                    required
-                    label="Repetir contraseña"
-                    id="outlined-adornment-repeat-password"
-                    autoComplete="new-password"
-                    value={form.repeatPassword}
-                    onChange={e =>
-                      setForm({ ...form, repeatPassword: e.target.value })
-                    }
-                    error={!form.repeatPassword.length}
-                    type={showRepeatPassword ? 'text' : 'password'}
-                    endAdornment={
-                      <InputAdornment position="end">
-                        <IconButton
-                          aria-label="toggle repeat password visibility"
-                          onClick={handleClickShowRepeatPassword}
-                          onMouseDown={handleMouseDownRepeatPassword}
-                          edge="end"
-                        >
-                          {showRepeatPassword ? (
-                            <VisibilityOffIcon />
-                          ) : (
-                            <VisibilityIcon />
-                          )}
-                        </IconButton>
-                      </InputAdornment>
-                    }
-                  />
-                  <FormHelperText error={!form.repeatPassword.length}>
-                    {form.repeatPassword.length
-                      ? ''
-                      : 'Las contraseñas no coinciden'}
-                  </FormHelperText>
-                </FormControl>
-              </>
-            )}
-            <FormControl fullWidth error={!employeeType.length}>
-              <InputLabel id="employee-simple-select-label">
-                Seleccione un rol de empleado
-              </InputLabel>
-              <Select
-                labelId="employee-simple-select-label"
-                id="employee-simple-select"
-                value={employeeType}
-                label="Seleccione un rol de empleado"
-                onChange={handleChangeEmployeeType}
-              >
-                <MenuItem value="user">Empleado</MenuItem>
-                <MenuItem value="admin">Administrador</MenuItem>
-              </Select>
-            </FormControl>
-          </Stack>
-        </DialogContent>
-        <DialogActions>
-          <Button color="inherit" onClick={handleDialog}>
-            Cancelar
-          </Button>
-          <LoadingButton
-            loading={loading}
-            disabled={!isValidForm}
-            onClick={onSubmit}
-          >
-            {isEdit ? 'Actualizar empleado' : 'Agregar empleado'}
-          </LoadingButton>
-        </DialogActions>
-      </Dialog>
+      <DialogAddUser
+        open={openDialogAddUser}
+        isLoading={loadingAddUser}
+        onClose={() => setOpenDialogAddUser(false)}
+        onSubmit={handleAddUser}
+      />
+      <DialogEditUser
+        open={openDialogEditUser}
+        user={userEdit}
+        isLoading={loadingEditUser}
+        onClose={() => setOpenDialogEditUser(false)}
+        onSubmit={handleUpdateUser}
+      />
     </Layout>
   );
 }
