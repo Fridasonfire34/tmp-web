@@ -6,9 +6,9 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { employeeId, name } = req.body;
+  const { employeeId } = req.body;
 
-  if (req.method !== 'PUT')
+  if (req.method !== 'DELETE')
     return res.status(405).json({
       success: false,
       status: 'error',
@@ -35,18 +35,15 @@ export default async function handler(
       });
 
     try {
-      await prisma.user.updateMany({
+      await prisma.user.delete({
         where: {
-          employeeId: employeeId
-        },
-        data: {
-          name
+          id: employeeId
         }
       });
       return res.status(200).json({
         success: true,
         status: 'success',
-        message: 'Employee updated successfully',
+        message: 'User deleted successfully',
         timestamp: new Date().toISOString(),
         stack: null
       });
