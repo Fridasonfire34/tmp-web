@@ -7,7 +7,7 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  const { employeeId, name, email, password, employeeType } = req.body;
+  const { employeeId, name, password, employeeType } = req.body;
 
   if (req.method !== 'POST')
     return res.status(405).json({
@@ -41,7 +41,6 @@ export default async function handler(
           id: v4(),
           employeeId,
           name,
-          email,
           password,
           role: employeeType
         }
