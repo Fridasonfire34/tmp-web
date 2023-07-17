@@ -1,6 +1,6 @@
 const pages = [
   {
-    name: 'Secuencias',
+    name: 'Weeks',
     id: 'sequences'
   },
   {

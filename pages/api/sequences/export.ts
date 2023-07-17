@@ -48,7 +48,7 @@ export default async function handler(
     const workbook = new excel.Workbook();
     const worksheet = workbook.addWorksheet(workbookName);
     worksheet.columns = [
-      { key: 'id', header: 'ID', width: 10 },
+      // { key: 'id', header: 'ID', width: 10 },
       { key: 'partNumber', header: 'Part Number', width: 15 },
       {
         key: 'buildSequence',
@@ -88,6 +88,11 @@ export default async function handler(
       {
         key: 'scannedBy',
         header: 'Scanned By',
+        width: 10
+      },
+      {
+        key: 'updatedAt',
+        header: 'updatedAt',
         width: 10
       }
     ];

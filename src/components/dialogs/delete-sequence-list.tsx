@@ -36,7 +36,7 @@ const DialogDeleteSequenceList = ({
       <DialogTitle>Mensaje</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Para poder eliminar el listado de secuencias, por favor ingresa tu
+          Para poder eliminar todas las semanas, por favor ingresa tu
           contraseña.
         </DialogContentText>
         <FormControl fullWidth focused variant="outlined" sx={{ mt: 3 }}>

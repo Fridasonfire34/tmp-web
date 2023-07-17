@@ -38,10 +38,11 @@ export default function HomePage() {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Administración de secuencias
+                Administración de semanas
               </Typography>
               <Typography variant="body1" gutterBottom>
-                En este apartado se encuentran un listado de las secuencias
+                En este apartado se encuentran un listado de las semanas
+                cargadas
               </Typography>
             </CardContent>
             <CardActions>
