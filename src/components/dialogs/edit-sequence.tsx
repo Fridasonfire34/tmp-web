@@ -43,7 +43,7 @@ const DialogEditSequence = ({
       <DialogTitle>Mensaje</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Actualizar la secuencia {sequence?.id}.
+          Actualizar informacion de la pieza {sequence?.id}.
         </DialogContentText>
         {form && (
           <Box my={2}>

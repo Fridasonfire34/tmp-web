@@ -38,8 +38,7 @@ const DialogDeleteSequence = ({
       <DialogTitle>Mensaje</DialogTitle>
       <DialogContent>
         <DialogContentText>
-          Para poder modificar la secuencia {id}, por favor ingresa tu
-          contraseña.
+          Para poder eliminar la semana, por favor ingresa tu contraseña.
         </DialogContentText>
         <FormControl fullWidth focused variant="outlined" sx={{ mt: 3 }}>
           <InputLabel htmlFor="outlined-adornment-password">

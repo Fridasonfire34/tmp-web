@@ -99,7 +99,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
   const theme = useTheme();
 
   const columns: GridColDef[] = [
-    { field: 'id', headerName: 'ID', width: 50 },
+    // { field: 'id', headerName: 'ID', width: 50 },
     { field: 'partNumber', headerName: 'Part Number', width: 180 },
     {
       field: 'buildSequence',
@@ -128,7 +128,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
     {
       field: 'line',
       headerName: 'Line',
-      width: 50
+      width: 80
     },
     {
       field: 'scannedBy',
@@ -138,7 +138,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
     {
       field: 'actions',
       headerName: 'Acciones',
-      width: 100,
+      width: 120,
       renderCell: cell => (
         <Stack width="100%" direction="row">
           <IconButton
@@ -319,7 +319,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
           {data?.length === 0 && (
             <Stack>
               <Typography color="gray" variant="subtitle1" gutterBottom>
-                No existen secuencias registradas.
+                No existen semanas cargadas.
               </Typography>
             </Stack>
           )}
@@ -385,7 +385,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
                           <ListItemIcon>
                             <TuneIcon />
                           </ListItemIcon>
-                          <ListItemText primary="Opciones de secuencias" />
+                          <ListItemText primary="Opciones" />
                           {openMenuTable ? (
                             <ExpandLessIcon />
                           ) : (
@@ -405,7 +405,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
                               <ListItemIcon>
                                 <AddIcon />
                               </ListItemIcon>
-                              <ListItemText primary="Añadir nueva secuencia a la semana actual" />
+                              <ListItemText primary="Añadir nueva pieza a la semana actual" />
                             </ListItemButton>
                             <ListItemButton
                               sx={{ pl: 4, color: 'red' }}
@@ -418,7 +418,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
                               <ListItemIcon>
                                 <DeleteIcon color="error" />
                               </ListItemIcon>
-                              <ListItemText primary="Eliminar todas las secuencias de la semana actual" />
+                              <ListItemText primary="Eliminar semana" />
                             </ListItemButton>
                           </List>
                         </Collapse>
