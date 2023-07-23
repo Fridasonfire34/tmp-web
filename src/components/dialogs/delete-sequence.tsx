@@ -4,6 +4,7 @@ import {
   VisibilityOff as VisibilityOffIcon
 } from '@mui/icons-material';
 import {
+  Box,
   Button,
   Dialog,
   DialogActions,
@@ -11,27 +12,34 @@ import {
   DialogContentText,
   DialogTitle,
   FormControl,
+  FormControlLabel,
   IconButton,
   InputAdornment,
   InputLabel,
-  OutlinedInput
+  OutlinedInput,
+  Switch
 } from '@mui/material';
 
 type DialogDeleteSequenceProps = {
   open: boolean;
   id: string | null;
+  isSaveBackup: boolean;
   onClose: () => void;
   onConfirm: (password: string) => void;
+  onCheckSaveBackup: (saveBackup: boolean) => void;
 };
 
 const DialogDeleteSequence = ({
   open,
   id,
+  isSaveBackup,
   onClose,
-  onConfirm
+  onConfirm,
+  onCheckSaveBackup
 }: DialogDeleteSequenceProps) => {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
+  const [saveBackup, setSaveBackup] = useState(true);
 
   return (
     <Dialog open={open} onClose={onClose}>
@@ -67,6 +75,17 @@ const DialogDeleteSequence = ({
             }
           />
         </FormControl>
+        <Box sx={{ display: 'flex', justifyContent: 'flex-end', mt: 3 }}>
+          <FormControlLabel
+            control={
+              <Switch
+                checked={isSaveBackup}
+                onChange={e => onCheckSaveBackup(e.target.checked)}
+              />
+            }
+            label="Guardar respaldo"
+          />
+        </Box>
       </DialogContent>
       <DialogActions>
         <Button

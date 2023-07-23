@@ -92,6 +92,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
     'sequence'
   );
   const [editSequence, setEditSequence] = useState<Sequence | null>(null);
+  const [isSaveBackup, setIsSaveBackup] = useState(true);
 
   const { data: client } = useSession();
 
@@ -276,13 +277,16 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
           });
       } else if (deleteType === 'week') {
         toast.loading('Limpiando listado...');
-        axios(`/api/sequences/truncate/week?week=${weekId}`, {
-          method: 'DELETE',
-          headers: {
-            id: client?.user.id as string,
-            password: password
+        axios(
+          `/api/sequences/truncate/week?week=${weekId}&saveBackup=${isSaveBackup}`,
+          {
+            method: 'DELETE',
+            headers: {
+              id: client?.user.id as string,
+              password: password
+            }
           }
-        })
+        )
           .then(() => {
             toast.success('Listado limpiado');
           })
@@ -309,8 +313,13 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
     router,
     sequenceId,
     userHasVerified,
-    weekId
+    weekId,
+    isSaveBackup
   ]);
+
+  const handleCheckSaveBackup = (saveBackup: boolean) => {
+    setIsSaveBackup(saveBackup);
+  };
 
   return (
     <Box>
@@ -458,9 +467,11 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
       </Card>
       <DialogDeleteSequence
         id={sequenceId || weekId}
+        isSaveBackup={isSaveBackup}
         open={openDialog}
         onClose={() => setOpenDialog(false)}
         onConfirm={handleVerifyUser}
+        onCheckSaveBackup={handleCheckSaveBackup}
       />
       <DialogEditSequence
         open={openDialogEdit}

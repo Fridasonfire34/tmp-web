@@ -7,7 +7,7 @@ export default async function handler(
   res: NextApiResponse
 ) {
   const { id } = req.headers;
-  const { week } = req.query;
+  const { week, saveBackup } = req.query;
 
   if (req.method !== 'DELETE')
     return res.status(405).json({
@@ -33,6 +33,25 @@ export default async function handler(
         stack: null
       });
     try {
+      if (saveBackup) {
+        const inventory = await prisma.inventory.findMany({
+          where: {
+            week: week as string
+          }
+        });
+        const backup = await prisma.inventoryHistory.createMany({
+          data: inventory
+        });
+        if (!backup) {
+          return res.status(500).json({
+            success: false,
+            status: 'error',
+            message: 'Backup failed',
+            timestamp: new Date().toISOString(),
+            stack: null
+          });
+        }
+      }
       await prisma.inventory.deleteMany({
         where: {
           week: week as string
