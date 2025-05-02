@@ -24,10 +24,7 @@ export default function HomePage() {
       </Head>
       <main>
         <Typography variant="h4" gutterBottom>
-          Resumen
-        </Typography>
-        <Typography variant="body1" gutterBottom>
-          En esta sección se muestra un resumen de la información de la empresa.
+          Administrador de Picking System
         </Typography>
         <Stack
           direction={{ xs: 'column', sm: 'row' }}
@@ -38,11 +35,10 @@ export default function HomePage() {
           <Card>
             <CardContent>
               <Typography variant="h6" gutterBottom>
-                Administración de semanas
+                Semanas Ms
               </Typography>
               <Typography variant="body1" gutterBottom>
-                En este apartado se encuentran un listado de las semanas
-                cargadas
+                Semanas cargadas de M
               </Typography>
             </CardContent>
             <CardActions>
@@ -52,7 +48,27 @@ export default function HomePage() {
                 color="primary"
                 onClick={() => router.push('/sequences')}
               >
-                Ver listado
+                Ver
+              </Button>
+            </CardActions>
+          </Card>
+          <Card>
+            <CardContent>
+              <Typography variant="h6" gutterBottom>
+                Boa & Viper
+              </Typography>
+              <Typography variant="body1" gutterBottom>
+                Semanas cargadas de Boa & Viper
+              </Typography>
+            </CardContent>
+            <CardActions>
+              <Button
+                fullWidth
+                variant="contained"
+                color="primary"
+                onClick={() => router.push('/boa')}
+              >
+                Ver
               </Button>
             </CardActions>
           </Card>
@@ -62,7 +78,7 @@ export default function HomePage() {
                 Administración de usuarios
               </Typography>
               <Typography variant="body1" gutterBottom>
-                En este apartado se encuentran un listado de los usuarios
+                Usuarios activos para escaneo
               </Typography>
             </CardContent>
             <CardActions>
@@ -72,7 +88,7 @@ export default function HomePage() {
                 color="primary"
                 onClick={() => router.push('/users')}
               >
-                Ver listado
+                Ver
               </Button>
             </CardActions>
           </Card>

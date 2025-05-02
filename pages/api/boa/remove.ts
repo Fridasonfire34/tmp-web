@@ -6,7 +6,10 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== 'GET')
+  const { id } = req.headers;
+  const { packingId } = req.query;
+
+  if (req.method !== 'DELETE')
     return res.status(405).json({
       success: false,
       status: 'error',
@@ -16,7 +19,6 @@ export default async function handler(
     });
 
   try {
-    const { id } = req.headers;
     const userId = await prisma.user.findUnique({
       where: {
         id: id as string
@@ -31,30 +33,11 @@ export default async function handler(
         stack: null
       });
     try {
-      const inventory = await prisma.inventory.findMany({
+      await prisma.inventory.delete({
         where: {
-          NOT: [
-            { week: { contains: 'Disparo', mode: 'insensitive' } },
-            { week: { contains: 'Boa', mode: 'insensitive' } },
-            { week: { contains: 'Viper', mode: 'insensitive' } }
-          ]
+          id: packingId as string
         }
       });
-
-      await prisma.inventoryHistory.createMany({
-        data: inventory
-      });
-
-      await prisma.inventory.deleteMany({
-        where: {
-          NOT: [
-            { week: { contains: 'Disparo', mode: 'insensitive' } },
-            { week: { contains: 'Boa', mode: 'insensitive' } },
-            { week: { contains: 'Viper', mode: 'insensitive' } }
-          ]
-        }
-      });
-
       return res.status(200).json({
         success: true,
         status: 'success',

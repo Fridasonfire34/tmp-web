@@ -92,7 +92,6 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
   const [deleteType, setDeleteType] = useState<'sequence' | 'week' | 'edit'>(
     'sequence'
   );
-
   const [editSequence, setEditSequence] = useState<Sequence | null>(null);
   const [isSaveBackup, setIsSaveBackup] = useState(true);
 
@@ -203,7 +202,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
 
   const handleAdd = (week: string) => {
     router.push({
-      pathname: '/sequences/add',
+      pathname: '/boa/add',
       query: { week }
     });
   };
@@ -228,13 +227,30 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
       });
   };
 
+  const handleExport = (week: any) => {
+    toast.loading('Descargando semana...');
+    axios(`/api/sequences/week?week=${week}`, {
+      responseType: 'blob',
+      headers: {
+        id: client?.user.id as string
+      }
+    })
+      .then(res => {
+        const file = window.URL.createObjectURL(res.data);
+        window.location.assign(file);
+        toast.dismiss();
+        toast.success('Reporte descargado');
+      })
+      .catch(() => toast.error('Ha ocurrido un error al descargar el reporte'));
+  };
+
   const handleUpdateSequence = (sequence: Sequence) => {
     toast.loading('Actualizando registro...');
     setOpenDialogEdit(false);
     setEditSequence(null);
     axios({
       method: 'PUT',
-      url: '/api/sequences/update',
+      url: '/api/boa/update',
       data: {
         ...sequence
       },
@@ -253,23 +269,6 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
       });
   };
 
-  const handleExport = (week: any) => {
-    toast.loading('Descargando semana...');
-    axios(`/api/sequences/week?week=${week}`, {
-      responseType: 'blob',
-      headers: {
-        id: client?.user.id as string
-      }
-    })
-      .then(res => {
-        const file = window.URL.createObjectURL(res.data);
-        window.location.assign(file);
-        toast.dismiss();
-        toast.success('Reporte descargado');
-      })
-      .catch(() => toast.error('Ha ocurrido un error al descargar el reporte'));
-  };
-
   useEffect(() => {
     if (userHasVerified) {
       setOpenDialog(false);
@@ -277,7 +276,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
         toast.loading('Eliminando registro...');
         axios({
           method: 'DELETE',
-          url: `/api/sequences/remove?packingId=${sequenceId}`,
+          url: `/api/boa/remove?packingId=${sequenceId}`,
           headers: {
             id: client?.user.id as string
           }
@@ -297,7 +296,9 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
       } else if (deleteType === 'week') {
         toast.loading('Limpiando listado...');
         axios(
-          `/api/sequences/truncate/week?week=${weekId}&saveBackup=${isSaveBackup}`,
+          `/api/boa/truncate/week?week=${encodeURIComponent(
+            weekId
+          )}&saveBackup=${isSaveBackup}`,
           {
             method: 'DELETE',
             headers: {

@@ -6,7 +6,11 @@ export default async function handler(
   req: NextApiRequest,
   res: NextApiResponse
 ) {
-  if (req.method !== 'GET')
+  const { id } = req.headers;
+  const { week, saveBackup } = req.query;
+  const decodedWeek = decodeURIComponent(week as string);
+
+  if (req.method !== 'DELETE') {
     return res.status(405).json({
       success: false,
       status: 'error',
@@ -14,15 +18,16 @@ export default async function handler(
       timestamp: new Date().toISOString(),
       stack: null
     });
+  }
 
   try {
-    const { id } = req.headers;
     const userId = await prisma.user.findUnique({
       where: {
         id: id as string
       }
     });
-    if (!userId)
+
+    if (!userId) {
       return res.status(404).json({
         success: false,
         status: 'error',
@@ -30,28 +35,32 @@ export default async function handler(
         timestamp: new Date().toISOString(),
         stack: null
       });
-    try {
-      const inventory = await prisma.inventory.findMany({
-        where: {
-          NOT: [
-            { week: { contains: 'Disparo', mode: 'insensitive' } },
-            { week: { contains: 'Boa', mode: 'insensitive' } },
-            { week: { contains: 'Viper', mode: 'insensitive' } }
-          ]
-        }
-      });
+    }
 
-      await prisma.inventoryHistory.createMany({
-        data: inventory
-      });
+    try {
+      if (saveBackup) {
+        const inventory = await prisma.inventory.findMany({
+          where: {
+            week: decodedWeek
+          }
+        });
+        const backup = await prisma.inventoryHistory.createMany({
+          data: inventory
+        });
+        if (!backup) {
+          return res.status(500).json({
+            success: false,
+            status: 'error',
+            message: 'Backup failed',
+            timestamp: new Date().toISOString(),
+            stack: null
+          });
+        }
+      }
 
       await prisma.inventory.deleteMany({
         where: {
-          NOT: [
-            { week: { contains: 'Disparo', mode: 'insensitive' } },
-            { week: { contains: 'Boa', mode: 'insensitive' } },
-            { week: { contains: 'Viper', mode: 'insensitive' } }
-          ]
+          week: decodedWeek
         }
       });
 

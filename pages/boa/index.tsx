@@ -20,7 +20,7 @@ import { useSession } from 'next-auth/react';
 
 import DialogDeleteSequenceList from '@/src/components/dialogs/delete-sequence-list';
 import Layout from '@/src/components/layout';
-import WeekTabs from '@/src/components/tabs/index';
+import WeekTabs from '@/src/components/tabs/index-boa';
 import { groupArray } from '@/src/utils/data';
 
 import 'filepond/dist/filepond.min.css';
@@ -37,7 +37,7 @@ export default function SequencesPage() {
   const { isLoading, error, data, refetch } = useQuery(
     'inventories',
     () =>
-      fetch('/api/sequences/list', {
+      fetch('/api/boa/list', {
         method: 'GET',
         headers: {
           id: client?.user.id as string
@@ -50,7 +50,7 @@ export default function SequencesPage() {
 
   const handleExport = () => {
     toast.loading('Descargando reporte...');
-    axios('/api/sequences/export', {
+    axios('/api/boa/export', {
       responseType: 'blob',
       headers: {
         id: client?.user.id as string
@@ -94,7 +94,7 @@ export default function SequencesPage() {
   useEffect(() => {
     if (userHasVerified) {
       toast.loading('Limpiando listado...');
-      axios('/api/sequences/truncate', {
+      axios('/api/boa/truncate', {
         headers: {
           id: client?.user.id as string,
           password: password
@@ -154,10 +154,10 @@ export default function SequencesPage() {
         <link rel="icon" href="/favicon.ico" />
       </Head>
       <Typography variant="h4" gutterBottom>
-        Semanas
+        Boa & Viper
       </Typography>
       <Typography variant="body1" gutterBottom>
-        Informacion de M cargada para el escaneo.
+        Informacion de Boa & Viper cargada para el escaneo.
       </Typography>
       <Stack
         direction={{ xs: 'column', sm: 'row' }}
@@ -199,7 +199,7 @@ export default function SequencesPage() {
           name="files"
           labelIdle='Arrastra y suelta tu archivo o <span class="filepond--label-action">buscar</span>'
           server={{
-            url: '/api/sequences/import',
+            url: '/api/boa/import',
             headers: {
               id: client?.user.id as string
             }

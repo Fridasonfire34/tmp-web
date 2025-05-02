@@ -1,7 +1,11 @@
 const pages = [
   {
-    name: 'Weeks',
+    name: 'Ms',
     id: 'sequences'
+  },
+  {
+    name: 'Boa & Viper',
+    id: 'boa'
   },
   {
     name: 'Usuarios',

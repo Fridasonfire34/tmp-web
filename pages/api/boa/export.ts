@@ -43,7 +43,7 @@ export default async function handler(
       }
     });
 
-    const workbookName = `M's`;
+    const workbookName = `Viper & Boa`;
     const workbook = new excel.Workbook();
     const worksheet = workbook.addWorksheet(workbookName);
     worksheet.columns = [
@@ -120,5 +120,3 @@ export default async function handler(
     }
   }
 }
-
-export {};
