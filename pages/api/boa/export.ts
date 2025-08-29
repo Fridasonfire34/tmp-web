@@ -35,8 +35,7 @@ export default async function handler(
 
     const inventory = await prisma.inventory.findMany({
       where: {
-        NOT: [
-          { week: { contains: 'Disparo', mode: 'insensitive' } },
+        OR: [
           { week: { contains: 'Boa', mode: 'insensitive' } },
           { week: { contains: 'Viper', mode: 'insensitive' } }
         ]

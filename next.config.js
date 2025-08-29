@@ -1,6 +1,10 @@
-/** @type {import('next').NextConfig} */
-const nextConfig = {
-  reactStrictMode: true
-};
+const fs = require('fs');
+const gracefulFs = require('graceful-fs');
+gracefulFs.gracefulify(fs);
 
-module.exports = nextConfig;
+
+const withTM = require('next-transpile-modules')(['@mui/icons-material']);
+
+module.exports = withTM({
+  // your Next.js config
+});

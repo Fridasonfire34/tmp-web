@@ -229,7 +229,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
 
   const handleExport = (week: any) => {
     toast.loading('Descargando semana...');
-    axios(`/api/sequences/week?week=${week}`, {
+    axios(`/api/boa/week?week=${week}`, {
       responseType: 'blob',
       headers: {
         id: client?.user.id as string
@@ -294,6 +294,7 @@ const WeekTabs = ({ data, onRefresh }: WeekTabsProps) => {
             setUserHasVerified(false);
           });
       } else if (deleteType === 'week') {
+        if (!weekId) return;
         toast.loading('Limpiando listado...');
         axios(
           `/api/boa/truncate/week?week=${encodeURIComponent(

@@ -48,7 +48,7 @@ export default async function handler(
           partNumber,
           buildSequence,
           quantity: Number(quantity),
-          packingDiskNo,
+          packingDiskNo: Number(packingDiskNo),
           scannedBy
         }
       });

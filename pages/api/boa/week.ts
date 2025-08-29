@@ -39,7 +39,10 @@ export default async function handler(
 
     const inventory = await prisma.inventory.findMany({
       where: {
-        week: week as string
+        week: {
+          contains: week as string,
+          mode: 'insensitive'
+        }
       }
     });
 

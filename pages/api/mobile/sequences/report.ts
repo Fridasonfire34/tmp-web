@@ -61,7 +61,9 @@ export default async function handler(
       });
     }
 
-    const listPackings = packing.filter(item => Number(item.quantity) > 0);
+    const listPackings = packing.filter(
+      (item: { quantity: any }) => Number(item.quantity) > 0
+    );
 
     if (listPackings.length > 0) {
       const doc = new PDFDocument();
@@ -69,27 +71,32 @@ export default async function handler(
       var stream = doc.pipe(new Base64Encode());
       createTempDirectory('/src/reports');
 
-      var dir = fs.createWriteStream(`src/reports/report-${packingId}.pdf`);
+      var dir = fs.createWriteStream(
+        `C:/Users/Administrador/Desktop/reports/incomplete/report-${packingId} Incomplete.pdf`
+      );
       doc.pipe(dir);
-      doc
-        .fontSize(27)
-        .text(
-          `Kit ${packingId} has NOT been fully verified. Those items not fully verified are list below.`,
-          100,
-          100
-        );
-
+      doc.fontSize(25).text(`Kit ${packingId} Incompleto`, 50, 70);
+      doc.fontSize(25).text(`Piezas pendientes por escanear: `, 50, 100);
+      doc.fontSize(17).text(`Fecha: ${new Date().toLocaleString()}`, 50, 132);
       doc.text('', 100, 220);
+      const TABLE_TOP = 155;
+      const PART_X = 50;
+      const QTY_X = 300;
+      doc
+        .fontSize(15)
+        .text('Part Number:', PART_X, TABLE_TOP)
+        .text('Cantidad:', QTY_X, TABLE_TOP);
       if (listPackings.length > 0) {
         for (let i = 0; i < listPackings.length; i++) {
           const item = listPackings[i];
+          const item_X = 50;
+          const Quty_X = 320;
+          let yCoord = TABLE_TOP + 23 + i * 23;
           doc
-            .fontSize(15)
-            .text(
-              `ID: ${i + 1} Item: ${item.packingDiskNo} - part: ${
-                item.partNumber
-              } - qty: ${item.quantity} - date: ${item.updatedAt}`
-            );
+            .fontSize(11)
+            .text(`${item.partNumber}`, item_X, yCoord)
+            .text(`${item.quantity}`, Quty_X, yCoord);
+          doc.moveDown(1);
           doc.moveDown(1);
         }
       }
@@ -113,11 +120,13 @@ export default async function handler(
       var finalString = '';
       var stream = doc.pipe(new Base64Encode());
 
-      doc.pipe(fs.createWriteStream(`file-${packingId}.pdf`));
-      doc
-        .fontSize(27)
-        .text(`Kit ${packingId} has been fully verified`, 100, 100);
-      doc.fontSize(15).text(`Date: ${new Date()}`, 100, 200);
+      doc.pipe(
+        fs.createWriteStream(
+          `C:/Users/Administrador/Desktop/reports/complete/report-${packingId} Complete.pdf`
+        )
+      );
+      doc.fontSize(27).text(`Kit ${packingId} Completo`, 50, 70);
+      doc.fontSize(15).text(`Date: ${new Date().toLocaleString()}`, 100, 100);
       doc.end();
 
       stream.on('data', function (chunk) {
